@@ -6,6 +6,7 @@ require 'pry'
 Game
   new
   start_round
+  deal_to(player)
   compare(hand, hand)
   play_again_or_quit
 
@@ -103,7 +104,7 @@ class Hand < CardCollection
       cards.each do |card|
         ace_count +=1 if card.rank == 'A'
       end
-      ace_count.time do
+      ace_count.times do
         total -= 10 if total > 21
       end
     end
@@ -114,7 +115,14 @@ end
 deck = Deck.new
 deck.add_full_deck
 deck.shuffle
-puts deck
+
+hand = Hand.new
+4.times do
+  hand.cards << deck.cards[0]
+  deck.cards.shift
+end
+puts hand
+puts hand.total_score
 
 
 
