@@ -26,7 +26,6 @@ Card
 Deck
   @cards
   shuffle
-  deal_to(hand)
 Hand
   @cards
   total_score
@@ -84,14 +83,37 @@ class Deck < CardCollection
   def shuffle
     cards.shuffle!
   end
+end
 
+class Hand < CardCollection
+  def total_score
+    total = 0
+    cards.each do |card|
+      if card.rank == 'A'
+        total += 11
+      elsif ['J','Q','K'].include?(card.rank)
+        total += 10
+      else
+        total += card.rank.to_i
+      end
+    end
+    # Adjust for aces
+    if total > 21
+      ace_count = 0
+      cards.each do |card|
+        ace_count +=1 if card.rank == 'A'
+      end
+      ace_count.time do
+        total -= 10 if total > 21
+      end
+    end
+    total
+  end
 end
 
 deck = Deck.new
 deck.add_full_deck
 deck.shuffle
-puts deck
-deck.sort
 puts deck
 
 
