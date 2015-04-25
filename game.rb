@@ -39,6 +39,7 @@ CLUB = "\u2664 ".encode('utf-8')
 HEART = "\u2661 ".encode('utf-8')
 SPADE = "\u2667 ".encode('utf-8')
 DIAMOND= "\u2662 ".encode('utf-8')
+SUITS = [CLUB, HEART, SPADE, DIAMOND]
 RANKS = %w{A 2 3 4 5 6 7 8 9 J Q K}
 
 class Card
@@ -54,28 +55,44 @@ class Card
   end
 end
 
-class Deck
+class CardCollection
   attr_accessor :cards
 
   def initialize
     @cards = [ ]
   end
 
-  def add_full_deck
-    [CLUB, HEART, SPADE, DIAMOND].each do |suit|
-      RANKS.each do |rank|
-        card = Card.new(suit, rank)
-        @cards << card
-      end
-    end
-    binding.pry
+  def to_s
+    display = ""
+    cards.each {|card|  display << "#{card} "}
+    display
   end
 end
 
+class Deck < CardCollection
+  def add_full_deck
+    SUITS.each do |suit|
+      suit_cards = [ ]
+      RANKS.each do |rank|
+        card = Card.new(suit, rank)
+        suit_cards << card
+      end
+    cards.concat(suit_cards)
+    end
+  end
 
-card = Card.new(DIAMOND, 'A')
+  def shuffle
+    cards.shuffle!
+  end
+
+end
+
 deck = Deck.new
 deck.add_full_deck
-binding.pry
+deck.shuffle
+puts deck
+deck.sort
+puts deck
+
 
 
