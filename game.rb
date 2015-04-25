@@ -1,3 +1,5 @@
+require 'pry'
+
 # Modelling
 =begin
 
@@ -52,7 +54,28 @@ class Card
   end
 end
 
+class Deck
+  attr_accessor :cards
+
+  def initialize
+    @cards = [ ]
+  end
+
+  def add_full_deck
+    [CLUB, HEART, SPADE, DIAMOND].each do |suit|
+      RANKS.each do |rank|
+        card = Card.new(suit, rank)
+        @cards << card
+      end
+    end
+    binding.pry
+  end
+end
+
+
 card = Card.new(DIAMOND, 'A')
-puts card
+deck = Deck.new
+deck.add_full_deck
+binding.pry
 
 
