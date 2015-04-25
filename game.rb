@@ -206,11 +206,33 @@ class Game
     deck.add_full_deck
     deck.shuffle
     2.times {player.hit(deck)}
-    puts player
-    player.update_bet
-    player.hit_or_stay
+    2.times {dealer.hit(deck)}
+    overview
+    turn(player)
   end
 
+  def turn(person)
+    overview
+    if person.class == Player
+      person.update_bet
+      person.hit_or_stay
+    else
+      person.hit_or_stay
+    end
+  end
+
+  def overview
+    system 'clear'
+    puts "-----------------------"
+    puts "#{player.name}:"
+    puts "Money: #{player.money}"
+    puts "Current bet: #{player.bet}"
+    puts "Hand: #{player.hand}"
+    puts "-----------------------"
+    puts "Dealer:"
+    puts "Hand: #{dealer.hand}"
+    puts "-----------------------"
+  end
 
 end
 
