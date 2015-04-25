@@ -112,6 +112,94 @@ class Hand < CardCollection
   end
 end
 
+class Player
+  attr_accessor :hand, :money, :name
+
+  def initialize
+    @hand = Hand.new
+  end
+end
+
+class Human < Player
+
+  def initialize
+    super
+    @money = 1000
+    puts "Hello, what is your name?"
+    @name = gets.chomp
+  end
+
+end
+
+class Dealer < Player
+  def initialize
+    super
+    @money = 10000
+    @name = "Dealer"
+end
+
+class Round
+  attr_accessor :player. :bet
+
+  def initialize(player, bet)
+    @player = player
+    @bet = bet
+  end
+
+  def set_new_bet
+    if player.class == Dealer
+      valid_bet?(bet)
+    elsif (player.class = Human) && (bet == 0)
+      puts "How much do you want to bet?"
+      new_bet = gets.chomp.to_i
+      if valid_bet?(new_bet)
+        bet = new_bet
+      else
+        set_new_bet
+      end
+    else
+      puts "Do you want to double down? [Y/N]"
+      answer = gets.chomp.downcase
+      if !['y', 'n'].include?(answer)
+
+    end
+  ...
+  end
+
+  protected
+
+  def valid_bet?(b)
+    if !(1..50).include?(b)
+      puts "Minimum bet of $1. Maximum $50. Try again."
+      return nil
+    elsif (player.money < bet) && (player.class = Dealer)
+      puts "The Dealer ran out of money!"
+      abort
+    elsif player.money < bet
+      puts "#{player.name} doesn't have that much money. Try again"
+      return nil
+    else
+      return true
+    end
+  end
+
+
+
+
+
+
+  end
+
+  def next
+
+  end
+
+end
+
+class Game
+  attr_accessor :players, :deck
+end
+
 deck = Deck.new
 deck.add_full_deck
 deck.shuffle
