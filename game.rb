@@ -87,7 +87,7 @@ class Deck < CardCollection
 end
 
 class Hand < CardCollection
-  def total_score
+  def score
     total = 0
     cards.each do |card|
       if card.rank == 'A'
@@ -125,6 +125,11 @@ class Person
     deck.cards.shift
   end
 
+  def blackjack_or_busted
+    if hand.score >= 21
+      end_game
+    end
+  end
 
 end
 
@@ -145,6 +150,7 @@ class Player < Person
     else
       double_down
     end
+    hit_or_stay
   end
 
   def place_bet
@@ -184,6 +190,15 @@ class Player < Person
     "#{name}'s hand is #{hand}."
   end
 
+  def win_bet
+    money += bet
+    bet = 0
+  end
+
+  def lose_bet
+    bet = 0
+  end
+
 end
 
 class Dealer < Person
@@ -202,27 +217,8 @@ class Game
     @dealer = Dealer.new
   end
 
-  def start
-    deck.add_full_deck
-    deck.shuffle
-    2.times {player.hit(deck)}
-    2.times {dealer.hit(deck)}
-    overview
-    turn(player)
-  end
-
-  def turn(person)
-    overview
-    if person.class == Player
-      person.update_bet
-      person.hit_or_stay
-    else
-      person.hit_or_stay
-    end
-  end
-
   def overview
-    system 'clear'
+    # system 'clear'
     puts "-----------------------"
     puts "#{player.name}:"
     puts "Money: #{player.money}"
@@ -234,6 +230,75 @@ class Game
     puts "-----------------------"
   end
 
+  def start
+    deck.add_full_deck
+    deck.shuffle
+    2.times {player.hit(deck)}
+    2.times {dealer.hit(deck)}
+    player_turn
+    dealer_turn
+    end_game
+    play_again
+  end
+
+  def player_turn
+    overview
+    player.update_bet
+    player_choice
+  end
+
+  def player_choice
+    puts "Hit or stay?"
+    answer = gets.chomp.downcase
+    if !['hit', 'stay'].include?(answer)
+      puts "Invalid choice. Try again"
+      player_choice
+    end
+    if answer == 'hit'
+      player.hit(deck)
+      overview
+      player.blackjack_or_busted
+      player_turn
+    else
+      puts "#{player.name} stayed."
+    end
+  end
+
+  def dealer_turn
+    overview
+    if dealer.hand.score < 17
+      dealer.hit(deck)
+      dealer.blackjack_or_busted
+      dealer_turn
+    else
+      puts "#{dealer.name} stayed."
+    end
+  end
+
+  def end_game
+    winner = Person.new
+    p_score = player.hand.score
+    d_score = dealer.hand.score
+    if (p_score == 21) || (d_score > 21)
+      winner = player
+    elsif (p_score > 21) || (d_score == 21)
+      winner = dealer
+    elsif p_score > d_score
+      winner = player
+    elsif p_score < d_score
+      winner = dealer
+    else
+      puts "It's a tie..."
+    end
+    if winner = player
+      player.money += (player.bet * 2)
+      puts "#{player.name} won!"
+    elsif winner = dealer
+      puts "#{dealer.name} won."
+    end
+    player.bet = 0
+    play_again?
+  end
 end
 
 Game.new.start
