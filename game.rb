@@ -63,9 +63,9 @@ class CardCollection
   end
 
   def to_s
-    display = ""
+    display = "["
     cards.each {|card|  display << "#{card} "}
-    display
+    display << "]"
   end
 end
 
@@ -112,105 +112,106 @@ class Hand < CardCollection
   end
 end
 
-class Player
-  attr_accessor :hand, :money, :name
+class Person
+  attr_accessor :name, :hand
 
   def initialize
     @hand = Hand.new
   end
+
+  def hit(deck)
+    puts "#{name} hit, #{deck.cards[0]}"
+    hand.cards << deck.cards[0]
+    deck.cards.shift
+  end
+
+
 end
 
-class Human < Player
+class Player < Person
+  attr_accessor :money, :bet
 
   def initialize
     super
     @money = 1000
+    @bet = 0
     puts "Hello, what is your name?"
     @name = gets.chomp
   end
 
-end
-
-class Dealer < Player
-  def initialize
-    super
-    @money = 10000
-    @name = "Dealer"
-end
-
-class Round
-  attr_accessor :player. :bet
-
-  def initialize(player, bet)
-    @player = player
-    @bet = bet
+  def update_bet
+    if bet == 0
+      place_bet
+    else
+      double_down
+    end
   end
 
-  def set_new_bet
-    if player.class == Dealer
-      valid_bet?(bet)
-    elsif (player.class = Human) && (bet == 0)
-      puts "How much do you want to bet?"
-      new_bet = gets.chomp.to_i
-      if valid_bet?(new_bet)
-        bet = new_bet
-      else
-        set_new_bet
-      end
+  def place_bet
+    puts "How much do you want to bet?"
+    new_bet = gets.chomp.to_i
+    max_bet = [50, @money].min
+    if (1..max_bet).include?(new_bet)
+      @bet = new_bet
+      puts "#{name} placed a bet of $#{bet}"
     else
-      puts "Do you want to double down? [Y/N]"
+      puts "Minimum bet of $1. Maximum bet of $#{max_bet}. Try again."
+      place_bet
+    end
+  end
+
+  def double_down
+    if (@bet * 2) > money
+      return
+    else
+      puts "Double down? [Y/N]"
       answer = gets.chomp.downcase
       if !['y', 'n'].include?(answer)
-
-    end
-  ...
-  end
-
-  protected
-
-  def valid_bet?(b)
-    if !(1..50).include?(b)
-      puts "Minimum bet of $1. Maximum $50. Try again."
-      return nil
-    elsif (player.money < bet) && (player.class = Dealer)
-      puts "The Dealer ran out of money!"
-      abort
-    elsif player.money < bet
-      puts "#{player.name} doesn't have that much money. Try again"
-      return nil
-    else
-      return true
+        puts "Invalid choice. Try again"
+        double_down
+      end
+      if answer == 'y'
+        @bet += @bet
+        puts "#{name} doubled down! The bet is now $#{bet}."
+      else
+        puts "The bet stays at $#{bet}."
+      end
     end
   end
 
-
-
-
-
-
+  def to_s
+    "#{name} has $#{money}."
+    "#{name}'s hand is #{hand}."
   end
 
-  def next
+end
 
+class Dealer < Person
+  def initialize
+    super
+    @name = "Dealer"
   end
-
 end
 
 class Game
-  attr_accessor :players, :deck
+  attr_accessor :player, :dealer, :deck
+
+  def initialize
+    @deck = Deck.new
+    @player = Player.new
+    @dealer = Dealer.new
+  end
+
+  def start
+    deck.add_full_deck
+    deck.shuffle
+    2.times {player.hit(deck)}
+    puts player
+    player.update_bet
+    player.hit_or_stay
+  end
+
+
 end
 
-deck = Deck.new
-deck.add_full_deck
-deck.shuffle
-
-hand = Hand.new
-4.times do
-  hand.cards << deck.cards[0]
-  deck.cards.shift
-end
-puts hand
-puts hand.total_score
-
-
-
+Game.new.start
