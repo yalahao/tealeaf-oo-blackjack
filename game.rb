@@ -1,5 +1,3 @@
-require 'pry'
-
 CLUB = "\u2664 ".encode('utf-8')
 HEART = "\u2661 ".encode('utf-8')
 SPADE = "\u2667 ".encode('utf-8')
@@ -189,19 +187,23 @@ class Game
     @num_rounds = 0
   end
 
+  def divider
+    puts "-----------------------"
+  end
+
   def overview
     system 'clear'
-    puts "-----------------------"
+    divider
     puts "Round #{num_rounds}"
-    puts "-----------------------"
+    divider
     puts "#{player.name}:"
     puts "Money: #{player.money}"
     puts "Current bet: #{player.bet}"
     puts "Hand: #{player.hand}"
-    puts "-----------------------"
+    divider
     puts "Dealer:"
     puts "Hand: #{dealer.hand}"
-    puts "-----------------------"
+    divider
   end
 
   def new_round
@@ -216,7 +218,7 @@ class Game
     dealer.hand = Hand.new
     overview
     puts "#{player.name}'s turn"
-    puts "-----------------------"
+    divider
     player.update_bet
     2.times {player.hit(deck)}
     2.times {dealer.hit(deck)}
@@ -232,7 +234,7 @@ class Game
     check_score(player)
     overview
     puts "#{player.name}'s turn"
-    puts "-----------------------"
+    divider
     player.update_bet
     player_choice
   end
@@ -257,9 +259,9 @@ class Game
     check_score(dealer)
     overview
     puts "#{dealer.name}'s turn"
-    puts "-----------------------"
+    divider
     sleep 1
-    if dealer.hand.score <= [17, player.hand.score].max
+    if dealer.hand.score <= [16, player.hand.score].max
       dealer.hit(deck)
       check_score(dealer)
       dealer_turn
@@ -277,7 +279,7 @@ class Game
   def end_round
     overview
     puts "End of round"
-    puts "-----------------------"
+    divider
     winner = Person.new
     p_score = player.hand.score
     d_score = dealer.hand.score
