@@ -1,26 +1,38 @@
-CLUB = "\u2664 ".encode('utf-8')
-HEART = "\u2661 ".encode('utf-8')
-SPADE = "\u2667 ".encode('utf-8')
-DIAMOND= "\u2662 ".encode('utf-8')
-SUITS = [CLUB, HEART, SPADE, DIAMOND]
-RANKS = %w{A 2 3 4 5 6 7 8 9 J Q K}
-MAX_BET = 100
-DECKS_OF_CARDS = 2
+module Constants
+  CLUB = "\u2664 ".encode('utf-8')
+  HEART = "\u2661 ".encode('utf-8')
+  SPADE = "\u2667 ".encode('utf-8')
+  DIAMOND= "\u2662 ".encode('utf-8')
+  SUITS = [CLUB, HEART, SPADE, DIAMOND]
+  RANKS = %w{A 2 3 4 5 6 7 8 9 J Q K}
+  MAX_BET = 100
+  DECKS_OF_CARDS = 2
+  BLACKJACK = 21
+  DISPLAY_DELAY = 1
+end
 
 class Card
+  include Constants
   attr_reader :suit, :rank
+  attr_accessor :face_up
 
-  def initialize(suit, rank)
+  def initialize(suit, rank, face_up)
     @suit = suit
     @rank = rank
+    @face_up = face_up
   end
 
   def to_s
-    "#{suit}#{rank}"
+    if @face_up == false
+      "**"
+    else
+      "#{suit}#{rank}"
+    end
   end
 end
 
 class Deck
+  include Constants
   attr_accessor :cards
 
   def initialize
@@ -32,7 +44,7 @@ class Deck
       SUITS.each do |suit|
         suit_cards = [ ]
         RANKS.each do |rank|
-          card = Card.new(suit, rank)
+          card = Card.new(suit, rank, true)
           suit_cards << card
         end
       cards.concat(suit_cards)
@@ -43,6 +55,7 @@ class Deck
 end
 
 class Hand
+  include Constants
   attr_accessor :cards
 
   def initialize
@@ -71,13 +84,13 @@ class Hand
       end
     end
     # Adjust for aces
-    if total > 21
+    if total > BLACKJACK
       ace_count = 0
       cards.each do |card|
         ace_count +=1 if card.rank == 'A'
       end
       ace_count.times do
-        total -= 10 if total > 21
+        total -= 10 if total > BLACKJACK
       end
     end
     total
@@ -85,6 +98,7 @@ class Hand
 end
 
 class Person
+  include Constants
   attr_accessor :name, :hand
 
   def initialize
@@ -95,11 +109,12 @@ class Person
     puts "#{name} hit, #{deck.cards[0]}"
     hand.cards << deck.cards[0]
     deck.cards.shift
-    sleep 1
+    sleep DISPLAY_DELAY
   end
 end
 
 class Player < Person
+  include Constants
   attr_accessor :money, :bet
 
   def initialize
@@ -134,7 +149,7 @@ class Player < Person
       puts "Invalid bet. Try again."
       place_bet
     end
-    sleep 1
+    sleep DISPLAY_DELAY
   end
 
   def double_down
@@ -154,8 +169,9 @@ class Player < Person
       else
         puts "The bet stayed at $#{bet}."
       end
-      sleep 1
+      sleep DISPLAY_DELAY
     end
+
   end
 
   def to_s
@@ -179,9 +195,16 @@ class Dealer < Person
     super
     @name = "Dealer"
   end
+
+  def hit(deck)
+    # second card face down for initial dealing
+    deck.cards[0].face_up = false if hand.cards.count == 1
+    super
+  end
 end
 
 class Game
+  include Constants
   attr_accessor :player, :dealer, :deck, :num_rounds
 
   def initialize
@@ -260,11 +283,13 @@ class Game
   end
 
   def dealer_turn
+    second_card = dealer.hand.cards[1]
+    second_card.face_up = true if second_card.face_up == false
     check_score(dealer)
     overview
     puts "#{dealer.name}'s turn"
     divider
-    sleep 1
+    sleep DISPLAY_DELAY
     if dealer.hand.score <= [16, player.hand.score].max
       dealer.hit(deck)
       check_score(dealer)
@@ -286,7 +311,7 @@ class Game
     divider
     puts "#{player.name}'s score is #{player.hand.score}."
     puts "#{dealer.name}'s score is #{dealer.hand.score}."
-    sleep 1
+    sleep DISPLAY_DELAY
     if winner == player
       player.money += player.bet * 2
       puts "#{player.name} won $#{player.bet}!"
@@ -297,7 +322,7 @@ class Game
       player.money += bet
     end
     player.bet = 0
-    sleep 1
+    sleep DISPLAY_DELAY
     if player.money == 0
       puts "After round #{num_rounds}, #{player.name} lost everything and had to leave..."
       abort
