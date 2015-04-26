@@ -20,7 +20,29 @@ class Card
   end
 end
 
-class CardCollection
+class Deck
+  attr_accessor :cards
+
+  def initialize
+    @cards = []
+  end
+
+  def reshuffle!
+    DECKS_OF_CARDS.times do
+      SUITS.each do |suit|
+        suit_cards = [ ]
+        RANKS.each do |rank|
+          card = Card.new(suit, rank)
+          suit_cards << card
+        end
+      cards.concat(suit_cards)
+      end
+    end
+    cards.shuffle!
+  end
+end
+
+class Hand
   attr_accessor :cards
 
   def initialize
@@ -36,25 +58,7 @@ class CardCollection
       display << "]"
     end
   end
-end
 
-class Deck < CardCollection
-  def reshuffle
-    DECKS_OF_CARDS.times do
-      SUITS.each do |suit|
-        suit_cards = [ ]
-        RANKS.each do |rank|
-          card = Card.new(suit, rank)
-          suit_cards << card
-        end
-      cards.concat(suit_cards)
-      end
-    end
-    cards.shuffle!
-  end
-end
-
-class Hand < CardCollection
   def score
     total = 0
     cards.each do |card|
@@ -213,7 +217,7 @@ class Game
       player.set_name
     end
     @deck = Deck.new
-    deck.reshuffle
+    deck.reshuffle!
     player.hand = Hand.new
     dealer.hand = Hand.new
     overview
@@ -280,29 +284,12 @@ class Game
     overview
     puts "End of round"
     divider
-    winner = Person.new
-    p_score = player.hand.score
-    d_score = dealer.hand.score
     puts "#{player.name}'s score is #{player.hand.score}."
     puts "#{dealer.name}'s score is #{dealer.hand.score}."
     sleep 1
-    if (p_score == 21) && (d_score == 21)
-      winner = nil
-    elsif (p_score == 21) || (d_score > 21)
-      winner = player
-    elsif (p_score > 21) || (d_score == 21)
-      winner = dealer
-    elsif p_score > d_score
-      winner = player
-    elsif p_score < d_score
-      winner = dealer
-    else
-      winner = nil
-    end
     if winner == player
-      money_won = player.bet * 2
-      player.money += money_won
-      puts "#{player.name} won $#{money_won}!"
+      player.money += player.bet * 2
+      puts "#{player.name} won $#{player.bet}!"
     elsif winner == dealer
       puts "#{dealer.name} won. #{player.name} lost $#{player.bet}..."
     else
@@ -316,6 +303,25 @@ class Game
       abort
     end
     play_again
+  end
+end
+
+def winner
+  winner = Person.new
+  p_score = player.hand.score
+  d_score = dealer.hand.score
+  if (p_score == 21) && (d_score == 21)
+    winner = nil
+  elsif (p_score == 21) || (d_score > 21)
+    winner = player
+  elsif (p_score > 21) || (d_score == 21)
+    winner = dealer
+  elsif p_score > d_score
+    winner = player
+  elsif p_score < d_score
+    winner = dealer
+  else
+    winner = nil
   end
 end
 
