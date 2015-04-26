@@ -8,7 +8,7 @@ module Constants
   MAX_BET = 100
   DECKS_OF_CARDS = 2
   BLACKJACK = 21
-  DISPLAY_DELAY = 1
+  DELAY = 1
 end
 
 class Card
@@ -109,7 +109,7 @@ class Person
     puts "#{name} hit, #{deck.cards[0]}"
     hand.cards << deck.cards[0]
     deck.cards.shift
-    sleep DISPLAY_DELAY
+    sleep DELAY
   end
 end
 
@@ -149,7 +149,7 @@ class Player < Person
       puts "Invalid bet. Try again."
       place_bet
     end
-    sleep DISPLAY_DELAY
+    sleep DELAY
   end
 
   def double_down
@@ -169,7 +169,7 @@ class Player < Person
       else
         puts "The bet stayed at $#{bet}."
       end
-      sleep DISPLAY_DELAY
+      sleep DELAY
     end
 
   end
@@ -289,8 +289,8 @@ class Game
     overview
     puts "#{dealer.name}'s turn"
     divider
-    sleep DISPLAY_DELAY
-    if dealer.hand.score <= [16, player.hand.score].max
+    sleep DELAY
+    if dealer.hand.score < [17, player.hand.score].max
       dealer.hit(deck)
       check_score(dealer)
       dealer_turn
@@ -311,7 +311,7 @@ class Game
     divider
     puts "#{player.name}'s score is #{player.hand.score}."
     puts "#{dealer.name}'s score is #{dealer.hand.score}."
-    sleep DISPLAY_DELAY
+    sleep DELAY
     if winner == player
       player.money += player.bet * 2
       puts "#{player.name} won $#{player.bet}!"
@@ -322,56 +322,56 @@ class Game
       player.money += bet
     end
     player.bet = 0
-    sleep DISPLAY_DELAY
+    sleep DELAY
     if player.money == 0
       puts "After round #{num_rounds}, #{player.name} lost everything and had to leave..."
       abort
     end
     play_again
-  end
-end
-
-def winner
-  winner = Person.new
-  p_score = player.hand.score
-  d_score = dealer.hand.score
-  if (p_score == 21) && (d_score == 21)
-    winner = nil
-  elsif (p_score == 21) || (d_score > 21)
-    winner = player
-  elsif (p_score > 21) || (d_score == 21)
-    winner = dealer
-  elsif p_score > d_score
-    winner = player
-  elsif p_score < d_score
-    winner = dealer
-  else
-    winner = nil
-  end
-end
-
-def play_again
-  puts "Play another round? (Y/N)"
-  choice = gets.chomp.downcase
-  if choice == 'y'
-    new_round
-  elsif choice == 'n'
-    system 'clear'
-    money_diff = player.money - 1000
-    if money_diff > 0
-      puts "After round #{num_rounds}, #{player.name} left with $#{money_diff} extra money in the pocket!"
-    elsif money_diff < 0
-      puts "After round #{num_rounds}, #{player.name} left with $#{money_diff * -1} loss..."
-    else
-      puts "After round #{num_rounds}, #{player.name} left."
     end
-    puts "--- THE END ---"
-    abort
-  else
-    puts "Invalid choice. Try again."
-    play_again
   end
-end
+
+  def winner
+    winner = Person.new
+    p_score = player.hand.score
+    d_score = dealer.hand.score
+    winner = if (p_score == 21) && (d_score == 21)
+            nil
+            elsif (p_score == 21) || (d_score > 21)
+              player
+            elsif (p_score > 21) || (d_score == 21)
+              dealer
+            elsif p_score > d_score
+              player
+            elsif p_score < d_score
+              dealer
+            else
+              nil
+            end
+  end
+
+  def play_again
+    puts "Play another round? (Y/N)"
+    choice = gets.chomp.downcase
+    if choice == 'y'
+      new_round
+    elsif choice == 'n'
+      system 'clear'
+      money_diff = player.money - 1000
+      if money_diff > 0
+        puts "After round #{num_rounds}, #{player.name} left with $#{money_diff} extra money in the pocket!"
+      elsif money_diff < 0
+        puts "After round #{num_rounds}, #{player.name} left with $#{money_diff * -1} loss..."
+      else
+        puts "After round #{num_rounds}, #{player.name} left."
+      end
+      puts "--- THE END ---"
+      abort
+    else
+      puts "Invalid choice. Try again."
+      play_again
+    end
+  end
 
 Game.new.new_round
 
