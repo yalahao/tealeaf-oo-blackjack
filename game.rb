@@ -6,6 +6,8 @@ SPADE = "\u2667 ".encode('utf-8')
 DIAMOND= "\u2662 ".encode('utf-8')
 SUITS = [CLUB, HEART, SPADE, DIAMOND]
 RANKS = %w{A 2 3 4 5 6 7 8 9 J Q K}
+MAX_BET = 100
+DECKS_OF_CARDS = 2
 
 class Card
   attr_reader :suit, :rank
@@ -29,7 +31,7 @@ class CardCollection
 
   def to_s
     if cards == []
-     "none"
+     "(none)"
     else
       display = "["
       cards.each {|card|  display << "#{card} "}
@@ -39,18 +41,17 @@ class CardCollection
 end
 
 class Deck < CardCollection
-  def add_full_deck
-    SUITS.each do |suit|
-      suit_cards = [ ]
-      RANKS.each do |rank|
-        card = Card.new(suit, rank)
-        suit_cards << card
+  def reshuffle
+    DECKS_OF_CARDS.times do
+      SUITS.each do |suit|
+        suit_cards = [ ]
+        RANKS.each do |rank|
+          card = Card.new(suit, rank)
+          suit_cards << card
+        end
+      cards.concat(suit_cards)
       end
-    cards.concat(suit_cards)
     end
-  end
-
-  def shuffle
     cards.shuffle!
   end
 end
@@ -103,6 +104,9 @@ class Player < Person
     super
     @money = 1000
     @bet = 0
+  end
+
+  def set_name
     puts "Enter player's name:"
     @name = gets.chomp.to_s
   end
@@ -116,9 +120,9 @@ class Player < Person
   end
 
   def place_bet
-    max_bet = [50, @money].min
+    max_bet = [MAX_BET, @money].min
     puts "Minimum bet of $1. Maximum bet of $#{max_bet}."
-    puts "How much do you want to bet?"
+    puts "How much does #{name} want to bet?"
     new_bet = gets.chomp.to_i
     if (1..max_bet).include?(new_bet)
       @bet = new_bet
@@ -196,9 +200,12 @@ class Game
   end
 
   def start
+    system 'clear'
+    if !player.name
+      player.set_name
+    end
     @deck = Deck.new
-    deck.add_full_deck
-    deck.shuffle
+    deck.reshuffle
     player.hand = Hand.new
     dealer.hand = Hand.new
     overview
@@ -209,7 +216,7 @@ class Game
     2.times {dealer.hit(deck)}
     player_turn
     dealer_turn
-    end_game
+    end_round
     play_again
   end
 
@@ -223,13 +230,13 @@ class Game
   end
 
   def player_choice
-    puts "Hit or stay?"
+    puts "Hit or stay? [H/S]"
     answer = gets.chomp.downcase
-    if !['hit', 'stay'].include?(answer)
+    if !['h', 's'].include?(answer)
       puts "Invalid choice. Try again"
       player_choice
     end
-    if answer == 'hit'
+    if answer == 'h'
       player.hit(deck)
       check_score(player)
       player_turn
@@ -254,17 +261,19 @@ class Game
 
   def check_score(person)
     if person.hand.score >= 21
-      end_game
+      end_round
     end
   end
 
-  def end_game
+  def end_round
     overview
-    puts "End of game"
+    puts "End of round"
     puts "-----------------------"
     winner = Person.new
     p_score = player.hand.score
     d_score = dealer.hand.score
+    puts "#{player.name}'s score is #{player.hand.score}."
+    puts "#{dealer.name}'s score is #{dealer.hand.score}."
     if (p_score == 21) || (d_score > 21)
       winner = player
     elsif (p_score > 21) || (d_score == 21)
@@ -276,12 +285,11 @@ class Game
     else
       puts "It's a tie..."
     end
-    binding.pry
-    if winner = player
+    if winner == player
       player.money += (player.bet * 2)
-      puts "#{player.name} won!"
-    elsif winner = dealer
-      puts "#{dealer.name} won."
+      puts "#{player.name} won $#{player.bet}!"
+    elsif winner == dealer
+      puts "#{dealer.name} won. #{player.name} lost $#{player.bet}..."
     end
     player.bet = 0
     if player.money == 0
@@ -293,7 +301,7 @@ class Game
 end
 
 def play_again
-  puts "Play again? (Y/N)"
+  puts "Play another round? (Y/N)"
   choice = gets.chomp.downcase
   if choice == 'y'
     start
