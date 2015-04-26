@@ -1,40 +1,5 @@
 require 'pry'
 
-# Modelling
-=begin
-
-Game
-  new
-  start_round
-  deal_to(player)
-  compare(hand, hand)
-  play_again_or_quit
-
-Round
-  @current_player
-
-Player
-  @hand
-Human < Player
-  hit_or_stay
-Computer < Player
-  hit_or_stay
-
-Card
-  @suit
-  @rank
-  display
-Deck
-  @cards
-  shuffle
-Hand
-  @cards
-  total_score
-  show
-  sort
-
-=end
-
 CLUB = "\u2664 ".encode('utf-8')
 HEART = "\u2661 ".encode('utf-8')
 SPADE = "\u2667 ".encode('utf-8')
@@ -59,13 +24,17 @@ class CardCollection
   attr_accessor :cards
 
   def initialize
-    @cards = [ ]
+    @cards = []
   end
 
   def to_s
-    display = "["
-    cards.each {|card|  display << "#{card} "}
-    display << "]"
+    if cards == []
+     "none"
+    else
+      display = "["
+      cards.each {|card|  display << "#{card} "}
+      display << "]"
+    end
   end
 end
 
@@ -123,14 +92,8 @@ class Person
     puts "#{name} hit, #{deck.cards[0]}"
     hand.cards << deck.cards[0]
     deck.cards.shift
+    sleep 1
   end
-
-  def blackjack_or_busted
-    if hand.score >= 21
-      end_game
-    end
-  end
-
 end
 
 class Player < Person
@@ -140,8 +103,8 @@ class Player < Person
     super
     @money = 1000
     @bet = 0
-    puts "Hello, what is your name?"
-    @name = gets.chomp
+    puts "Enter player's name:"
+    @name = gets.chomp.to_s
   end
 
   def update_bet
@@ -150,18 +113,19 @@ class Player < Person
     else
       double_down
     end
-    hit_or_stay
   end
 
   def place_bet
+    max_bet = [50, @money].min
+    puts "Minimum bet of $1. Maximum bet of $#{max_bet}."
     puts "How much do you want to bet?"
     new_bet = gets.chomp.to_i
-    max_bet = [50, @money].min
     if (1..max_bet).include?(new_bet)
       @bet = new_bet
+      @money -= new_bet
       puts "#{name} placed a bet of $#{bet}"
     else
-      puts "Minimum bet of $1. Maximum bet of $#{max_bet}. Try again."
+      puts "Invalid bet. Try again."
       place_bet
     end
   end
@@ -177,10 +141,11 @@ class Player < Person
         double_down
       end
       if answer == 'y'
-        @bet += @bet
+        @money -= bet
+        @bet += bet
         puts "#{name} doubled down! The bet is now $#{bet}."
       else
-        puts "The bet stays at $#{bet}."
+        puts "The bet stayed at $#{bet}."
       end
     end
   end
@@ -218,7 +183,7 @@ class Game
   end
 
   def overview
-    # system 'clear'
+    system 'clear'
     puts "-----------------------"
     puts "#{player.name}:"
     puts "Money: #{player.money}"
@@ -231,8 +196,15 @@ class Game
   end
 
   def start
+    @deck = Deck.new
     deck.add_full_deck
     deck.shuffle
+    player.hand = Hand.new
+    dealer.hand = Hand.new
+    overview
+    puts "#{player.name}'s turn"
+    puts "-----------------------"
+    player.update_bet
     2.times {player.hit(deck)}
     2.times {dealer.hit(deck)}
     player_turn
@@ -242,7 +214,10 @@ class Game
   end
 
   def player_turn
+    check_score(player)
     overview
+    puts "#{player.name}'s turn"
+    puts "-----------------------"
     player.update_bet
     player_choice
   end
@@ -256,8 +231,7 @@ class Game
     end
     if answer == 'hit'
       player.hit(deck)
-      overview
-      player.blackjack_or_busted
+      check_score(player)
       player_turn
     else
       puts "#{player.name} stayed."
@@ -265,17 +239,29 @@ class Game
   end
 
   def dealer_turn
+    check_score(dealer)
     overview
+    puts "#{dealer.name}'s turn"
+    puts "-----------------------"
     if dealer.hand.score < 17
       dealer.hit(deck)
-      dealer.blackjack_or_busted
+      check_score(dealer)
       dealer_turn
     else
       puts "#{dealer.name} stayed."
     end
   end
 
+  def check_score(person)
+    if person.hand.score >= 21
+      end_game
+    end
+  end
+
   def end_game
+    overview
+    puts "End of game"
+    puts "-----------------------"
     winner = Person.new
     p_score = player.hand.score
     d_score = dealer.hand.score
@@ -290,6 +276,7 @@ class Game
     else
       puts "It's a tie..."
     end
+    binding.pry
     if winner = player
       player.money += (player.bet * 2)
       puts "#{player.name} won!"
@@ -297,7 +284,34 @@ class Game
       puts "#{dealer.name} won."
     end
     player.bet = 0
-    play_again?
+    if player.money == 0
+      puts "#{player.name} ran out of money and had to leave..."
+      abort
+    end
+    play_again
+  end
+end
+
+def play_again
+  puts "Play again? (Y/N)"
+  choice = gets.chomp.downcase
+  if choice == 'y'
+    start
+  elsif choice == 'n'
+    system 'clear'
+    money_diff = player.money - 1000
+    if money_diff > 0
+      puts "#{player.name} left with $#{money_diff} extra money in the pocket!"
+    elsif money_diff < 0
+      puts "#{player.name} lost $#{money_diff * -1} and left..."
+    else
+      puts "#{player.name} left."
+    end
+    puts "-- THE END --"
+    abort
+  else
+    puts "Invalid choice. Try again."
+    play_again
   end
 end
 
