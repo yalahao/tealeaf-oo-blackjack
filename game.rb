@@ -107,7 +107,7 @@ class Player < Person
   end
 
   def set_name
-    puts "Enter player's name:"
+    puts ">> Enter player's name:"
     @name = gets.chomp.to_s
   end
 
@@ -122,7 +122,7 @@ class Player < Person
   def place_bet
     max_bet = [MAX_BET, @money].min
     puts "Minimum bet of $1. Maximum bet of $#{max_bet}."
-    puts "How much does #{name} want to bet?"
+    puts ">> How much does #{name} want to bet?"
     new_bet = gets.chomp.to_i
     if (1..max_bet).include?(new_bet)
       @bet = new_bet
@@ -132,13 +132,14 @@ class Player < Person
       puts "Invalid bet. Try again."
       place_bet
     end
+    sleep 1
   end
 
   def double_down
-    if (@bet * 2) > money
+    if @bet > money
       return
     else
-      puts "Double down? [Y/N]"
+      puts ">> Double down? [Y/N]"
       answer = gets.chomp.downcase
       if !['y', 'n'].include?(answer)
         puts "Invalid choice. Try again"
@@ -147,10 +148,11 @@ class Player < Person
       if answer == 'y'
         @money -= bet
         @bet += bet
-        puts "#{name} doubled down! The bet is now $#{bet}."
+        puts "#{name} doubled the bet to $#{bet}."
       else
         puts "The bet stayed at $#{bet}."
       end
+      sleep 1
     end
   end
 
@@ -178,16 +180,19 @@ class Dealer < Person
 end
 
 class Game
-  attr_accessor :player, :dealer, :deck
+  attr_accessor :player, :dealer, :deck, :num_rounds
 
   def initialize
     @deck = Deck.new
     @player = Player.new
     @dealer = Dealer.new
+    @num_rounds = 0
   end
 
   def overview
     system 'clear'
+    puts "-----------------------"
+    puts "Round #{num_rounds}"
     puts "-----------------------"
     puts "#{player.name}:"
     puts "Money: #{player.money}"
@@ -199,8 +204,9 @@ class Game
     puts "-----------------------"
   end
 
-  def start
+  def new_round
     system 'clear'
+    @num_rounds += 1
     if !player.name
       player.set_name
     end
@@ -214,6 +220,8 @@ class Game
     player.update_bet
     2.times {player.hit(deck)}
     2.times {dealer.hit(deck)}
+    check_score(player)
+    check_score(dealer)
     player_turn
     dealer_turn
     end_round
@@ -230,7 +238,7 @@ class Game
   end
 
   def player_choice
-    puts "Hit or stay? [H/S]"
+    puts ">> Hit or stay? [H/S]"
     answer = gets.chomp.downcase
     if !['h', 's'].include?(answer)
       puts "Invalid choice. Try again"
@@ -250,7 +258,8 @@ class Game
     overview
     puts "#{dealer.name}'s turn"
     puts "-----------------------"
-    if dealer.hand.score < 17
+    sleep 1
+    if dealer.hand.score <= [17, player.hand.score].max
       dealer.hit(deck)
       check_score(dealer)
       dealer_turn
@@ -274,7 +283,10 @@ class Game
     d_score = dealer.hand.score
     puts "#{player.name}'s score is #{player.hand.score}."
     puts "#{dealer.name}'s score is #{dealer.hand.score}."
-    if (p_score == 21) || (d_score > 21)
+    sleep 1
+    if (p_score == 21) && (d_score == 21)
+      winner = nil
+    elsif (p_score == 21) || (d_score > 21)
       winner = player
     elsif (p_score > 21) || (d_score == 21)
       winner = dealer
@@ -283,17 +295,22 @@ class Game
     elsif p_score < d_score
       winner = dealer
     else
-      puts "It's a tie..."
+      winner = nil
     end
     if winner == player
-      player.money += (player.bet * 2)
-      puts "#{player.name} won $#{player.bet}!"
+      money_won = player.bet * 2
+      player.money += money_won
+      puts "#{player.name} won $#{money_won}!"
     elsif winner == dealer
       puts "#{dealer.name} won. #{player.name} lost $#{player.bet}..."
+    else
+      puts "It's a tie..."
+      player.money += bet
     end
     player.bet = 0
+    sleep 1
     if player.money == 0
-      puts "#{player.name} ran out of money and had to leave..."
+      puts "After round #{num_rounds}, #{player.name} lost everything and had to leave..."
       abort
     end
     play_again
@@ -304,18 +321,18 @@ def play_again
   puts "Play another round? (Y/N)"
   choice = gets.chomp.downcase
   if choice == 'y'
-    start
+    new_round
   elsif choice == 'n'
     system 'clear'
     money_diff = player.money - 1000
     if money_diff > 0
-      puts "#{player.name} left with $#{money_diff} extra money in the pocket!"
+      puts "After round #{num_rounds}, #{player.name} left with $#{money_diff} extra money in the pocket!"
     elsif money_diff < 0
-      puts "#{player.name} lost $#{money_diff * -1} and left..."
+      puts "After round #{num_rounds}, #{player.name} left with $#{money_diff * -1} loss..."
     else
-      puts "#{player.name} left."
+      puts "After round #{num_rounds}, #{player.name} left."
     end
-    puts "-- THE END --"
+    puts "--- THE END ---"
     abort
   else
     puts "Invalid choice. Try again."
@@ -323,4 +340,4 @@ def play_again
   end
 end
 
-Game.new.start
+Game.new.new_round
