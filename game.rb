@@ -16,10 +16,10 @@ class Card
   attr_reader :suit, :rank
   attr_accessor :face_up
 
-  def initialize(suit, rank, face_up)
+  def initialize(suit, rank)
     @suit = suit
     @rank = rank
-    @face_up = face_up
+    @face_up = true
   end
 
   def to_s
@@ -44,7 +44,7 @@ class Deck
       SUITS.each do |suit|
         suit_cards = [ ]
         RANKS.each do |rank|
-          card = Card.new(suit, rank, true)
+          card = Card.new(suit, rank)
           suit_cards << card
         end
       cards.concat(suit_cards)
@@ -128,14 +128,6 @@ class Player < Person
     @name = gets.chomp.to_s
   end
 
-  def update_bet
-    if bet == 0
-      place_bet
-    else
-      double_down
-    end
-  end
-
   def place_bet
     max_bet = [MAX_BET, @money].min
     puts "Minimum bet of $1. Maximum bet of $#{max_bet}."
@@ -198,7 +190,7 @@ class Dealer < Person
 
   def hit(deck)
     # second card face down for initial dealing
-    deck.cards[0].face_up = false if hand.cards.count == 1
+    deck.cards[0].face_up = false if hand.cards.count == 0
     super
   end
 end
@@ -246,7 +238,7 @@ class Game
     overview
     puts "#{player.name}'s turn"
     divider
-    player.update_bet
+    player.place_bet
     2.times {player.hit(deck)}
     2.times {dealer.hit(deck)}
     check_score(player)
@@ -262,29 +254,44 @@ class Game
     overview
     puts "#{player.name}'s turn"
     divider
-    player.update_bet
     player_choice
   end
 
   def player_choice
-    puts ">> Hit or stay? [H/S]"
+    puts ">> Hit, stay or double down? [H/S/D]"
     answer = gets.chomp.downcase
-    if !['h', 's'].include?(answer)
+    if !['h', 's', 'd'].include?(answer)
       puts "Invalid choice. Try again"
       player_choice
     end
-    if answer == 'h'
+    case answer
+    when 'h'
       player.hit(deck)
       check_score(player)
       player_turn
-    else
+    when 'd'
+      if player.money < player.bet
+        puts "#{player.name} doesn't have enough money to double the bet..."
+        puts "Try again."
+        player_choice
+      else
+        player.money -= player.bet
+        player.bet += player.bet
+        puts "#{player.name} doubled the bet to $#{player.bet}."
+        sleep DELAY
+        player.hit(deck)
+        sleep DELAY
+        check_score(player)
+        player_turn
+      end
+    when 's'
       puts "#{player.name} stayed."
     end
   end
 
   def dealer_turn
-    second_card = dealer.hand.cards[1]
-    second_card.face_up = true if second_card.face_up == false
+    first_card = dealer.hand.cards[0]
+    first_card.face_up = true if first_card.face_up == false
     check_score(dealer)
     overview
     puts "#{dealer.name}'s turn"
@@ -319,7 +326,7 @@ class Game
       puts "#{dealer.name} won. #{player.name} lost $#{player.bet}..."
     else
       puts "It's a tie..."
-      player.money += bet
+      player.money += player.bet
     end
     player.bet = 0
     sleep DELAY
